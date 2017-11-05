@@ -4,12 +4,10 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -20,6 +18,9 @@ import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
+
+    android.hardware.Camera camera;
+    android.hardware.Camera.Parameters parameters;
 
     private CameraManager mCameraManager;
     private String mCameraId;
@@ -79,7 +80,25 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            Camera cam = null;
+            private void turnOnFlashLight() {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        mCameraManager.setTorchMode(mCameraId, true);
+                    } else {
+                        try {
+                            parameters.setFlashMode(android.hardware.Camera.Parameters.FLASH_MODE_TORCH);
+                            camera.setParameters(parameters);
+                            camera.startPreview();
+                        } catch (RuntimeException e) {
+                            Toast.makeText(MainActivity.this, "Camera Permission is not granted", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    onBtn.setBackgroundResource(R.drawable.onbtn);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+
             private void turnOffFlashLight() {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -87,56 +106,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else {
                         try {
-                            Handler handler = new Handler();
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Camera camera = Camera.open();
-                                    android.hardware.Camera.Parameters parameters = camera.getParameters();
-
-                                    parameters.setFlashMode(android.hardware.Camera.Parameters.FLASH_MODE_OFF);
-                                    camera.setParameters(parameters);
-
-                                    camera.stopPreview();
-                                    camera.release();
-                                }
-                            });
+                            parameters.setFlashMode(android.hardware.Camera.Parameters.FLASH_MODE_OFF);
+                            camera.setParameters(parameters);
+                            camera.stopPreview();
                         } catch (Exception e) {
                             e.printStackTrace();
                             Toast.makeText(getBaseContext(), "Exception throws in turning off flashlight.", Toast.LENGTH_SHORT).show();
                         }
                     }
                     onBtn.setBackgroundResource(R.drawable.offbtn);
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            private void turnOnFlashLight() {
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        mCameraManager.setTorchMode(mCameraId, true);
-                    }
-                    else {
-                        try {
-                            Camera camera = Camera.open();
-                            android.hardware.Camera.Parameters parameters = camera.getParameters();
-
-                            parameters.setFlashMode(android.hardware.Camera.Parameters.FLASH_MODE_TORCH);
-                            camera.setParameters(parameters);
-                            camera.startPreview();
-
-                            camera.autoFocus(new android.hardware.Camera.AutoFocusCallback() {
-                                @Override
-                                public void onAutoFocus(boolean b, android.hardware.Camera camera) {
-
-                                }
-                            });
-                        } catch (RuntimeException e) {
-                            Toast.makeText(MainActivity.this,"Camera Permission is not granted",Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    onBtn.setBackgroundResource(R.drawable.onbtn);
                 } catch (CameraAccessException e) {
                     e.printStackTrace();
                 }
